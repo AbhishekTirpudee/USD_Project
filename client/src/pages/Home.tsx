@@ -5,6 +5,7 @@ import Layout from "@/components/Layout";
 import HeroBanner from "@/components/HeroBanner";
 import ContentSlider from "@/components/ContentSlider";
 import { SkeletonHeroBanner } from "@/components/Skeleton";
+import { mockMovies } from "@/lib/mockData";
 import { useLocation } from "wouter";
 
 export default function Home() {
@@ -45,8 +46,10 @@ export default function Home() {
     return null;
   }
 
-  const heroBanner = trendingMoviesQuery.data?.[0];
-  const genres = movieGenresQuery.data || [];
+  const hasGithubIo = typeof window !== 'undefined' && window.location.hostname.includes("github.io");
+
+  const heroBanner = (!hasGithubIo && trendingMoviesQuery.data?.[0]) ? trendingMoviesQuery.data[0] : mockMovies[0];
+  const genres = (!hasGithubIo && movieGenresQuery.data?.length) ? movieGenresQuery.data : [{id: 1, name: "Action Placeholder"}, {id: 2, name: "Sci-Fi Series"}];
 
   return (
     <Layout>
@@ -67,11 +70,11 @@ export default function Home() {
         )}
 
         {/* Continue Watching */}
-        {continueWatchingQuery.data && continueWatchingQuery.data.length > 0 && (
+        {((continueWatchingQuery.data && continueWatchingQuery.data.length > 0) || hasGithubIo) && (
           <ContentSlider
             title="Continue Watching"
-            items={continueWatchingQuery.data}
-            isLoading={continueWatchingQuery.isLoading}
+            items={(!hasGithubIo && continueWatchingQuery.data?.length) ? continueWatchingQuery.data : mockMovies.slice(0, 3)}
+            isLoading={hasGithubIo ? false : continueWatchingQuery.isLoading}
             mediaType="movie"
           />
         )}
@@ -79,8 +82,8 @@ export default function Home() {
         {/* Trending Now */}
         <ContentSlider
           title="Trending Now"
-          items={trendingMoviesQuery.data || []}
-          isLoading={trendingMoviesQuery.isLoading}
+          items={(!hasGithubIo && trendingMoviesQuery.data?.length) ? trendingMoviesQuery.data : mockMovies}
+          isLoading={hasGithubIo ? false : trendingMoviesQuery.isLoading}
           mediaType="movie"
         />
 
@@ -89,7 +92,7 @@ export default function Home() {
           <ContentSlider
             key={genre.id}
             title={genre.name}
-            items={[]}
+            items={hasGithubIo ? mockMovies.slice().reverse() : []}
             isLoading={false}
             mediaType="movie"
           />

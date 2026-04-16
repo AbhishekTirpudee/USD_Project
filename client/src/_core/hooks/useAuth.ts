@@ -42,15 +42,18 @@ export function useAuth(options?: UseAuthOptions) {
   }, [logoutMutation, utils]);
 
   const state = useMemo(() => {
+    const isMock = typeof window !== 'undefined' && window.location.hostname.includes("github.io");
+    const mockUser = isMock ? { id: 1, name: "Demo User", email: "demo@example.com" } : null;
+
     localStorage.setItem(
       "manus-runtime-user-info",
-      JSON.stringify(meQuery.data)
+      JSON.stringify(meQuery.data || mockUser)
     );
     return {
-      user: meQuery.data ?? null,
-      loading: meQuery.isLoading || logoutMutation.isPending,
+      user: meQuery.data ?? mockUser,
+      loading: isMock ? false : (meQuery.isLoading || logoutMutation.isPending),
       error: meQuery.error ?? logoutMutation.error ?? null,
-      isAuthenticated: Boolean(meQuery.data),
+      isAuthenticated: Boolean(meQuery.data ?? mockUser),
     };
   }, [
     meQuery.data,

@@ -3,6 +3,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import Layout from "@/components/Layout";
 import MovieCard from "@/components/MovieCard";
+import { mockMovies, mockShows } from "@/lib/mockData";
 import { SkeletonRow } from "@/components/Skeleton";
 import { Search as SearchIcon } from "lucide-react";
 
@@ -21,8 +22,15 @@ export default function Search() {
     { enabled: query.length > 0 && searchType === "tv" }
   );
 
-  const results = searchType === "movie" ? searchMoviesQuery.data : searchShowsQuery.data;
-  const isLoading = searchType === "movie" ? searchMoviesQuery.isLoading : searchShowsQuery.isLoading;
+  const hasGithubIo = typeof window !== 'undefined' && window.location.hostname.includes("github.io");
+
+  const results = searchType === "movie" 
+    ? ((!hasGithubIo && searchMoviesQuery.data?.length) ? searchMoviesQuery.data : mockMovies.filter(m => m.title.toLowerCase().includes(query.toLowerCase()) || query === ''))
+    : ((!hasGithubIo && searchShowsQuery.data?.length) ? searchShowsQuery.data : mockShows.filter(m => m.title.toLowerCase().includes(query.toLowerCase()) || query === ''));
+
+  const isLoading = searchType === "movie" 
+    ? (hasGithubIo ? false : searchMoviesQuery.isLoading)
+    : (hasGithubIo ? false : searchShowsQuery.isLoading);
 
   return (
     <Layout>
