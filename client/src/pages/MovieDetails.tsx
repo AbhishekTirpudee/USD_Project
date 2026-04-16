@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Play, Plus, Share2 } from "lucide-react";
 import { Link } from "wouter";
 import { SkeletonHeroBanner } from "@/components/Skeleton";
+import { mockMovies, mockShows } from "@/lib/mockData";
 
 export default function MovieDetails() {
   const [match, params] = useRoute("/:mediaType/:id");
@@ -14,30 +15,37 @@ export default function MovieDetails() {
   const mediaType = (params?.mediaType as "movie" | "tv") || "movie";
   const id = parseInt(params?.id || "0");
 
+  const hasGithubIo = typeof window !== 'undefined' && window.location.hostname.includes("github.io");
+
   const movieDetailsQuery = trpc.content.details.movie.useQuery(
     { movieId: id },
-    { enabled: mediaType === "movie" && !!id }
+    { enabled: !hasGithubIo && mediaType === "movie" && !!id }
   );
 
   const showDetailsQuery = trpc.content.details.show.useQuery(
     { showId: id },
-    { enabled: mediaType === "tv" && !!id }
+    { enabled: !hasGithubIo && mediaType === "tv" && !!id }
   );
 
   const detailsQuery = mediaType === "movie" ? movieDetailsQuery : showDetailsQuery;
 
   const isInWatchlistQuery = trpc.content.watchlist.isInWatchlist.useQuery(
     { tmdbId: id, mediaType },
-    { enabled: isAuthenticated && !!id }
+    { enabled: !hasGithubIo && isAuthenticated && !!id }
   );
+  
+  const isLoading = hasGithubIo ? false : detailsQuery.isLoading;
+  const mockData = mediaType === "movie" ? mockMovies.find(m => m.id === id) : mockShows.find(m => m.id === id);
+  const resolvedData = hasGithubIo ? mockData : detailsQuery.data;
+  const resolvedWatchlist = hasGithubIo ? false : isInWatchlistQuery.data;
 
   const addToWatchlistMutation = trpc.content.watchlist.add.useMutation();
   const removeFromWatchlistMutation = trpc.content.watchlist.remove.useMutation();
 
   const handleWatchlistToggle = async () => {
-    if (!detailsQuery.data) return;
+    if (!resolvedData) return;
 
-    if (isInWatchlistQuery.data) {
+    if (resolvedWatchlist) {
       await removeFromWatchlistMutation.mutateAsync({
         tmdbId: id,
         mediaType,
@@ -46,15 +54,15 @@ export default function MovieDetails() {
       await addToWatchlistMutation.mutateAsync({
         tmdbId: id,
         mediaType,
-        title: (detailsQuery.data as any).title || (detailsQuery.data as any).name,
-        posterPath: (detailsQuery.data as any).poster_path,
+        title: (resolvedData as any).title || (resolvedData as any).name,
+        posterPath: (resolvedData as any).poster_path,
       });
     }
 
     isInWatchlistQuery.refetch();
   };
 
-  if (detailsQuery.isLoading) {
+  if (isLoading) {
     return (
       <Layout>
         <div className="px-4 sm:px-6 lg:px-8 py-8">
@@ -64,7 +72,7 @@ export default function MovieDetails() {
     );
   }
 
-  if (!detailsQuery.data) {
+  if (!resolvedData) {
     return (
       <Layout>
         <div className="px-4 sm:px-6 lg:px-8 py-12 text-center">
@@ -74,7 +82,7 @@ export default function MovieDetails() {
     );
   }
 
-  const data = detailsQuery.data as any;
+  const data = resolvedData as any;
   const title = data.title || data.name;
   const backdropUrl = data.backdrop_path
     ? `https://image.tmdb.org/t/p/w1280${data.backdrop_path}`
@@ -180,7 +188,7 @@ export default function MovieDetails() {
                     onClick={handleWatchlistToggle}
                   >
                     <Plus size={20} />
-                    {isInWatchlistQuery.data ? "Remove" : "Add to List"}
+                    {resolvedWatchlist ? "Remove" : "Add to List"}
                   </Button>
 
                   <Button
