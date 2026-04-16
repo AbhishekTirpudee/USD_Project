@@ -14,11 +14,13 @@ import MovieDetails from "./pages/MovieDetails";
 import Player from "./pages/Player";
 import MyList from "./pages/MyList";
 import Profile from "./pages/Profile";
+import Auth from "./pages/Auth";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
+      <Route path="/login" component={Auth} />
       <Route path="/home" component={Home} />
       <Route path="/search" component={Search} />
       <Route path="/movie/:id" component={MovieDetails} />
