@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { Router as WouterRouter, Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Layout from "./components/Layout";
@@ -34,14 +34,19 @@ function Router() {
 }
 
 function App() {
+  const base = import.meta.env.BASE_URL;
+  const routerBase = base === '/' ? undefined : base.replace(/\/$/, '');
+
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
           <Toaster />
-          <Layout>
-            <Router />
-          </Layout>
+          <WouterRouter base={routerBase}>
+            <Layout>
+              <Router />
+            </Layout>
+          </WouterRouter>
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>
